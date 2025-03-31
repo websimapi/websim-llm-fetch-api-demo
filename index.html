@@ -1,0 +1,276 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Fetch API Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .demo-container {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .output {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            min-height: 100px;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: 0.3s;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>In-Site LLM Fetch API Demo</h1>
+    
+    <p>This page demonstrates how to use the in-site Language Model (LLM) capabilities provided by <code>websim</code> to make AI-powered requests directly from your web application.</p>
+
+    <h2>How It Works</h2>
+    <p>The <code>websim</code> object provides access to AI capabilities right in your browser. Here's how you can leverage these features:</p>
+
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'BasicChat')">Basic Chat</button>
+        <button class="tablinks" onclick="openTab(event, 'JsonOutput')">JSON Output</button>
+        <button class="tablinks" onclick="openTab(event, 'ImageInput')">Image Processing</button>
+        <button class="tablinks" onclick="openTab(event, 'ImageGen')">Image Generation</button>
+    </div>
+
+    <div id="BasicChat" class="tabcontent" style="display: block;">
+        <h3>Basic AI Chat</h3>
+        <p>Send messages to the AI and get responses:</p>
+        <pre><code>let conversationHistory = [];
+
+// In your message send handler:
+const newMessage = {
+  role: "user",
+  content: "What is two plus two?",
+};
+
+// Add to conversation history
+conversationHistory.push(newMessage);
+
+// Only keep the last 10 messages 
+conversationHistory = conversationHistory.slice(-10);
+
+// Make the AI request
+const completion = await websim.chat.completions.create({
+  messages: [
+    {
+      role: "system",
+      content: "You are a friendly assistant who speaks in rhyming verse.",
+    }, // System message is optional
+    ...conversationHistory,
+  ],
+});
+
+const response = completion.content;
+
+// Add the AI response to the conversation history
+conversationHistory.push(completion);</code></pre>
+
+        <div class="demo-container">
+            <h4>Try it live:</h4>
+            <textarea id="basicChatInput" placeholder="Type a message for the rhyming assistant...">What is your favorite season?</textarea>
+            <button class="btn" onclick="runBasicChat()">Send Message</button>
+            <div class="output" id="basicChatOutput">Response will appear here...</div>
+        </div>
+    </div>
+
+    <div id="JsonOutput" class="tabcontent">
+        <h3>JSON Output</h3>
+        <p>Request structured data from the AI:</p>
+        <pre><code>const completion = await websim.chat.completions.create({
+  messages: [
+    {
+      role: "system",
+      content: `Combine the following concepts into a single, coherent idea.
+Respond directly with JSON, following this JSON schema, and no other text.
+{
+  concept: string;
+  emoji: string;
+}`,
+    },
+    {
+      role: "user",
+      content: "eggs + fire",
+    }
+  ],
+  json: true,
+});
+
+const result = JSON.parse(completion.content);
+let concept = result.concept;
+let emoji = result.emoji;</code></pre>
+
+        <div class="demo-container">
+            <h4>Try it live:</h4>
+            <textarea id="jsonInput" placeholder="Enter concepts to combine (e.g., 'books + mountains')">coffee + coding</textarea>
+            <button class="btn" onclick="runJsonExample()">Get JSON</button>
+            <div class="output" id="jsonOutput">JSON response will appear here...</div>
+        </div>
+    </div>
+
+    <div id="ImageInput" class="tabcontent">
+        <h3>Image Input & Analysis</h3>
+        <p>Analyze images with AI:</p>
+        <pre><code>const completion = await websim.chat.completions.create({
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: `Determine if the image is a natural photograph of an animal.
+Respond directly with JSON, following this JSON schema, and no other text.
+{
+  isPhotograph: boolean;
+  isAnimal: boolean;
+  isInNature: boolean;
+}`,
+        },
+        {
+          type: "image_url",
+          image_url: { url: imageDataUrl },
+        },
+      ],
+    },
+  ],
+  json: true,
+});
+
+let result = JSON.parse(completion.content);
+let isPhotograph = result.isPhotograph;
+let isAnimal = result.isAnimal;
+let isInNature = result.isInNature;</code></pre>
+
+        <div class="demo-container">
+            <h4>Upload an image to analyze:</h4>
+            <input type="file" id="imageUpload" accept="image/*">
+            <div id="imagePreview" style="margin: 10px 0; max-width: 300px;"></div>
+            <button class="btn" onclick="analyzeImage()" disabled id="analyzeBtn">Analyze Image</button>
+            <div class="output" id="imageAnalysisOutput">Upload an image to analyze it...</div>
+        </div>
+    </div>
+
+    <div id="ImageGen" class="tabcontent">
+        <h3>AI Image Generation</h3>
+        <p>Generate images from text prompts:</p>
+        <pre><code>// Generate with default square aspect ratio
+const result = await websim.imageGen({
+  prompt: "A crayon child's drawing of a turtle",
+});
+
+// Generate with specific aspect ratio
+const result = await websim.imageGen({
+  prompt: "A beautiful sunset over a calm ocean",
+  aspect_ratio: "16:9",
+});
+
+// Generate with specific dimensions
+const result = await websim.imageGen({
+  prompt: "A beautiful sunset over a calm ocean",
+  width: 1024,
+  height: 768,
+});
+
+// Use a seed for variations
+const result = await websim.imageGen({
+  prompt: "A beautiful sunset over a calm ocean",
+  seed: 4,
+});
+
+console.log(result.url);</code></pre>
+
+        <div class="demo-container">
+            <h4>Try it live:</h4>
+            <textarea id="imagePrompt" placeholder="Enter an image prompt...">A watercolor painting of a cat in a cafe</textarea>
+            <select id="aspectRatio">
+                <option value="1:1">1:1 (Square)</option>
+                <option value="16:9">16:9 (Landscape)</option>
+                <option value="9:16">9:16 (Portrait)</option>
+                <option value="3:2">3:2</option>
+                <option value="2:3">2:3</option>
+            </select>
+            <button class="btn" onclick="generateImage()">Generate Image</button>
+            <div class="output" id="imageGenOutput">
+                <p>Generated image will appear here...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
